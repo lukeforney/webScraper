@@ -50,7 +50,21 @@ def get_companies_from_page(page_url):
 base_url = 'https://www.shalexp.com/texas/fort-bend-county/companies'
 companies_data = []
 
-for page in range(1, 2):
+print("how many pages do you want to scan? will only scan the first x pages, where x is your input")
+pagerange = int(input())
+
+totCompanies = 0
+for page in range(1, pagerange+1):
+    if page == 1:
+        page_url = base_url
+    else:
+        page_url = f'{base_url}?page={page}'
+    
+    companies = get_companies_from_page(page_url)
+    totCompanies += len(companies)
+    
+x=1
+for page in range(1, pagerange+1):
     if page == 1:
         page_url = base_url
     else:
@@ -61,7 +75,8 @@ for page in range(1, 2):
         summary = get_company_summary(company_url)
         summary['Company Name'] = company_name
         companies_data.append(summary)
-        print(f"Processed company #{company_index} out of {len(companies)}: {company_name}")
+        print(f"Processed company rank #{x}/{totCompanies}, {company_name}")
+        x+=1
 
 for company_data in companies_data:
     if 'Operating States' in company_data and 'Operating State' in company_data:
