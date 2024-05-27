@@ -18,11 +18,9 @@ def get_company_summary(company_url):
                 td = row.find('td')
                 if th and td:
                     key = th.text.strip()
-                    value = ' '.join(td.stripped_strings)  # Handle nested elements and strip strings
-                    # Normalize keys
+                    value = ' '.join(td.stripped_strings)
                     if key.lower() in ['operating state', 'operating states']:
                         key = 'Operating State(s)'
-                        # If the key already exists, merge the values
                         if key in summary_data:
                             summary_data[key] += ', ' + value
                         else:
@@ -65,7 +63,6 @@ for page in range(1, 2):
         companies_data.append(summary)
         print(f"Processed company #{company_index} out of {len(companies)}: {company_name}")
 
-# Merge data from both "Operating State(s)" and "Operating State" into a single column
 for company_data in companies_data:
     if 'Operating States' in company_data and 'Operating State' in company_data:
         company_data['Operating State(s)'] = ', '.join(
@@ -74,14 +71,11 @@ for company_data in companies_data:
         del company_data['Operating States']
         del company_data['Operating State']
 
-# Create DataFrame
 df = pd.DataFrame(companies_data)
 
-# Rearrange columns
 cols = df.columns.tolist()
 cols = ['Company Name'] + [col for col in cols if col != 'Company Name']
 df = df[cols]
 
-# Save to CSV
 df.to_csv('companies_summary.csv', index=False)
 print(f"Saved {len(companies_data)} companies to companies_summary.csv")
