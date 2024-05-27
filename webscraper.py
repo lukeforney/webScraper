@@ -47,7 +47,9 @@ def get_companies_from_page(page_url):
     
     return companies
 
-base_url = 'https://www.shalexp.com/texas/fort-bend-county/companies'
+county = input("What County do you want to scan? Do not include the word 'County'. (e.g. Harris, Fort Bend, Wharton, etc.)\n")
+county = county.lower().replace(' ', '-')
+base_url = f'https://www.shalexp.com/texas/{county}-county/companies'
 companies_data = []
 
 print("how many pages do you want to scan? will only scan the first x pages, where x is your input")
@@ -64,6 +66,7 @@ for page in range(1, pagerange+1):
     totCompanies += len(companies)
     
 x=1
+company_names_set = set()
 for page in range(1, pagerange+1):
     if page == 1:
         page_url = base_url
@@ -72,11 +75,15 @@ for page in range(1, pagerange+1):
     
     companies = get_companies_from_page(page_url)
     for company_index, (company_name, company_url) in enumerate(companies, start=1):
-        summary = get_company_summary(company_url)
-        summary['Company Name'] = company_name
-        companies_data.append(summary)
-        print(f"Processed company rank #{x}/{totCompanies}, {company_name}")
-        x+=1
+        if company_name in company_names_set:
+            print(f"Skipping duplicate company: {company_name}")
+        else:
+            company_names_set.add(company_name)
+            summary = get_company_summary(company_url)
+            summary['Company Name'] = company_name
+            companies_data.append(summary)
+            print(f"Processed company rank #{x}/{totCompanies}, {company_name}")
+            x+=1
 
 for company_data in companies_data:
     if 'Operating States' in company_data and 'Operating State' in company_data:
@@ -85,12 +92,12 @@ for company_data in companies_data:
         )
         del company_data['Operating States']
         del company_data['Operating State']
-
+        
 df = pd.DataFrame(companies_data)
 
 cols = df.columns.tolist()
 cols = ['Company Name'] + [col for col in cols if col != 'Company Name']
 df = df[cols]
 
-df.to_csv('companies_summary.csv', index=False)
-print(f"Saved {len(companies_data)} companies to companies_summary.csv")
+df.to_csv('companies_summary_' + county + '.csv', index=False)
+print(f"Saved {len(companies_data)} companies to companies_summary_{county}.csv")
