@@ -99,5 +99,5 @@ cols = df.columns.tolist()
 cols = ['Company Name'] + [col for col in cols if col != 'Company Name']
 df = df[cols]
 
-df.to_csv('companies_summary_' + county + '.csv', index=False)
+df.to_csv('companies_summary_' + county.replace('-', '_') + '_county.csv', index=False)
 print(f"Saved {len(companies_data)} companies to companies_summary_{county}.csv")
