@@ -28,6 +28,20 @@ def get_company_summary(company_url):
                     else:
                         summary_data[key] = value
 
+    # Extract contact information
+    contact_section = soup.find('div', class_='card card-block')
+    if contact_section:
+        contact_table = contact_section.find('table', class_='table-grey-head')
+        if contact_table:
+            rows = contact_table.find('tbody').find_all('tr')
+            for i, row in enumerate(rows, start=1):
+                tds = row.find_all('td')
+                if len(tds) == 2:
+                    address = tds[0].text.strip()
+                    phone = tds[1].text.strip()
+                    summary_data[f'Address {i}'] = address
+                    summary_data[f'Phone {i}'] = phone
+
     return summary_data
 
 def get_companies_from_page(page_url):
@@ -52,7 +66,7 @@ county = county.lower().replace(' ', '-')
 base_url = f'https://www.shalexp.com/texas/{county}-county/companies'
 companies_data = []
 
-print("how many pages do you want to scan? will only scan the first x pages, where x is your input")
+print("How many pages do you want to scan? Will only scan the first x pages, where x is your input")
 pagerange = int(input())
 
 totCompanies = 0
@@ -65,7 +79,7 @@ for page in range(1, pagerange+1):
     companies = get_companies_from_page(page_url)
     totCompanies += len(companies)
     
-x=1
+x = 1
 company_names_set = set()
 for page in range(1, pagerange+1):
     if page == 1:
@@ -83,8 +97,9 @@ for page in range(1, pagerange+1):
             summary['Company Name'] = company_name
             companies_data.append(summary)
             print(f"Processed company rank #{x}/{totCompanies}, {company_name}")
-            x+=1
+            x += 1
 
+# Combine 'Operating States' and 'Operating State' into 'Operating State(s)'
 for company_data in companies_data:
     if 'Operating States' in company_data and 'Operating State' in company_data:
         company_data['Operating State(s)'] = ', '.join(
@@ -92,12 +107,29 @@ for company_data in companies_data:
         )
         del company_data['Operating States']
         del company_data['Operating State']
-        
+
 df = pd.DataFrame(companies_data)
 
+# Ensure 'Company Name' is the first column and 'Operating State(s)' is the second column
 cols = df.columns.tolist()
-cols = ['Company Name'] + [col for col in cols if col != 'Company Name']
-df = df[cols]
+cols = ['Company Name', 'Operating State(s)'] + [col for col in cols if col not in ['Company Name', 'Operating State(s)']]
 
-df.to_csv('companies_summary_' + county.replace('-', '_') + '_county.csv', index=False)
-print(f"Saved {len(companies_data)} companies to companies_summary_{county}.csv")
+# Rearrange to put estimated daily production columns before Address 1
+production_columns = ['Estimated Daily Oil Prod.', 'Estimated Daily Gas Prod.', 'Estimated Daily Water Prod.']
+address_columns = [col for col in cols if 'Address' in col or 'Phone' in col]
+other_columns = [col for col in cols if col not in production_columns + address_columns]
+
+# Reorder columns
+columns_order = ['Company Name', 'Operating State(s)']
+columns_order.extend(production_columns)
+columns_order.extend(other_columns)
+columns_order.extend(address_columns)
+df = df[columns_order]
+
+try:
+    df.to_csv(f'companies_summary_{county.replace("-", "_")}_county.csv', index=False)
+    print(f"Saved {len(companies_data)} companies to companies_summary_{county}.csv")
+except PermissionError:
+    for i in range (1,4):
+        print("!!!Cannot output data as the file is being used by another application!!!")
+    print("Please close any running instance of the spreadsheet and re-run the code.")
