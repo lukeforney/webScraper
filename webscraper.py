@@ -13,7 +13,7 @@ def get_company_summary(company_url):
         table = summary_section.find('table', class_='table')
         if table:
             rows = table.find_all('tr')
-            for row in rows:
+            for row in rows:    
                 th = row.find('th')
                 td = row.find('td')
                 if th and td:
